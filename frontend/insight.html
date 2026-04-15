@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据总览 - 北京12345智能分析平台</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a2050 0%, #051230 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* 导航栏 */
+        .navbar {
+            background: rgba(10, 32, 80, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 999;
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #fff;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo span {
+            color: #4fc3f7;
+            margin-left: 8px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 48px;
+        }
+
+        .nav-links a {
+            color: #cccccc;
+            text-decoration: none;
+            font-size: 16px;
+            padding: 10px 16px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .nav-links a:hover,
+        .nav-links a.active {
+            color: #ffffff;
+            background: rgba(42, 93, 198, 0.37);
+        }
+
+        .nav-links a.active::before {
+            content: "";
+            position: absolute;
+            bottom: -31px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 6px;
+            background: #4fc3f7;
+            border-radius: 50%;
+        }
+
+        /* 主容器 */
+        .container {
+            max-width: 1400px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        /* 页面标题 */
+        .page-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .page-title {
+            font-size: 36px;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 15px;
+        }
+
+        .page-subtitle {
+            font-size: 18px;
+            color: #aaa;
+        }
+
+        /* 数据概览卡片 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-bottom: 50px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #aaa;
+            margin-bottom: 15px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #4fc3f7;
+            margin: 10px 0;
+        }
+
+        .stat-desc {
+            font-size: 13px;
+            color: #888;
+        }
+
+        /* 图表区域 */
+        .chart-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 22px;
+            font-weight: bold;
+            color: #4fc3f7;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chart-container {
+            width: 100%;
+            height: 400px;
+        }
+
+        /* 分割线 */
+        .divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 50px 0;
+        }
+
+        /* 历史数据标题 */
+        .history-title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #4fc3f7;
+            text-align: center;
+            margin: 60px 0 30px;
+        }
+
+        /* 历史年份对比容器 */
+        .history-comparison {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .nav-container {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .nav-links {
+                gap: 20px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .history-comparison {
+                grid-template-columns: 1fr;
+            }
+            
+            .chart-container {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">北京12345<span>智能分析平台</span></a>
+            <nav class="nav-links">
+                <a href="index.html">首页</a>
+                <a href="data-overview.html" class="active">数据总览</a>
+                <a href="dashboard.html">模拟驾驶舱</a>
+            </nav>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- 页面标题 -->
+        <div class="page-header">
+            <h1 class="page-title">数据总览分析平台</h1>
+            <p class="page-subtitle">2026年实时数据 + 历年历史趋势深度分析</p>
+        </div>
+
+        <!-- 2026年数据概览 -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">📅 2026年累计诉求量</div>
+                <div class="stat-value">1,412,568</div>
+                <div class="stat-desc">1-4月累计受理</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">📈 日均处理量</div>
+                <div class="stat-value">11,771</div>
+                <div class="stat-desc">件/日</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">📉 同比增长</div>
+                <div class="stat-value" style="color: #4CAF50;">-8.5%</div>
+                <div class="stat-desc">较2025年同期</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">⭐ 平均满意度</div>
+                <div class="stat-value">96.2%</div>
+                <div class="stat-desc">预期全年达标</div>
+            </div>
+        </div>
+
+        <!-- 第一部分：2026年专项分析 -->
+        <h2 class="history-title">2026年数据分析 (1-4月)</h2>
+        
+        <!-- 图表1：2026年月度趋势 -->
+        <div class="chart-section">
+            <div class="section-title">📈 2026年1-4月月度诉求趋势</div>
+            <div id="currentYearChart" class="chart-container"></div>
+        </div>
+
+        <!-- 图表2：2026年诉求类型分布 -->
+        <div class="chart-section">
+            <div class="section-title">📊 2026年诉求类型分布 (占比分析)</div>
+            <div id="categoryChart" class="chart-container"></div>
+        </div>
+
+        <!-- 图表3：2026年处理时效分析 -->
+        <div class="chart-section">
+            <div class="section-title">⏱️ 2026年处理时效分布</div>
+            <div id="timeChart" class="chart-container"></div>
+        </div>
+
+        <!-- 分割线 -->
+        <div class="divider"></div>
+
+        <!-- 第二部分：历年数据对比分析 -->
+        <h2 class="history-title">历年数据对比分析 (2022-2025)</h2>
+
+        <!-- 图表4：历年总量趋势 -->
+        <div class="chart-section">
+            <div class="section-title">📅 年度诉求总量趋势 (2022-2025)</div>
+            <div id="historyTrendChart" class="chart-container"></div>
+        </div>
+
+        <!-- 图表5：历年同比增长率 -->
+        <div class="chart-section">
+            <div class="section-title">📈 历年同比增长率对比</div>
+            <div id="growthRateChart" class="chart-container"></div>
+        </div>
+
+        <!-- 图表6：历年满意度趋势 -->
+        <div class="chart-section">
+            <div class="section-title">⭐ 历年满意度变化趋势</div>
+            <div id="satisfactionChart" class="chart-container"></div>
+        </div>
+
+        <!-- 第三部分：历年诉求类别TOP5对比 -->
+        <h2 class="history-title">历年诉求类别TOP5对比分析</h2>
+
+        <div class="history-comparison">
+            <!-- 图表7：2022年类别TOP5 -->
+            <div class="chart-section">
+                <div class="section-title">🏆 2022年诉求类别TOP5</div>
+                <div id="category2022Chart" class="chart-container"></div>
+            </div>
+
+            <!-- 图表8：2023年类别TOP5 -->
+            <div class="chart-section">
+                <div class="section-title">🥇 2023年诉求类别TOP5</div>
+                <div id="category2023Chart" class="chart-container"></div>
+            </div>
+
+            <!-- 图表9：2024年类别TOP5 -->
+            <div class="chart-section">
+                <div class="section-title">🥈 2024年诉求类别TOP5</div>
+                <div id="category2024Chart" class="chart-container"></div>
+            </div>
+
+            <!-- 图表10：2025年类别TOP5 -->
+            <div class="chart-section">
+                <div class="section-title">🥉 2025年诉求类别TOP5</div>
+                <div id="category2025Chart" class="chart-container"></div>
+            </div>
+        </div>
+
+        <!-- 图表11：各类别历年趋势对比 -->
+        <div class="chart-section">
+            <div class="section-title">📊 主要诉求类别历年趋势对比</div>
+            <div id="categoryTrendChart" class="chart-container"></div>
+        </div>
+
+        <!-- 图表12：月度对比雷达图 -->
+        <div class="chart-section">
+            <div class="section-title">🔍 年度表现多维对比 (雷达图)</div>
+            <div id="radarChart" class="chart-container"></div>
+        </div>
+
+        <!-- 数据说明 -->
+        <div class="chart-section" style="background: rgba(255, 255, 255, 0.02);">
+            <div class="section-title">📋 数据说明</div>
+            <p style="color: #ccc; line-height: 1.6; font-size: 14px;">
+                1. 2026年数据为1-4月实际统计数据，5-6月为预测值<br>
+                2. 历年数据基于北京12345市民服务热线官方统计资料<br>
+                3. 诉求类别按《北京市市民服务热线分类标准》进行划分<br>
+                4. 同比增长率计算公式：(当年值-上年值)/上年值×100%<br>
+                5. 数据更新时间：2026年4月15日
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // 初始化所有图表实例
+        const charts = {
+            currentYear: echarts.init(document.getElementById('currentYearChart')),
+            category: echarts.init(document.getElementById('categoryChart')),
+            time: echarts.init(document.getElementById('timeChart')),
+            historyTrend: echarts.init(document.getElementById('historyTrendChart')),
+            growthRate: echarts.init(document.getElementById('growthRateChart')),
+            satisfaction: echarts.init(document.getElementById('satisfactionChart')),
+            category2022: echarts.init(document.getElementById('category2022Chart')),
+            category2023: echarts.init(document.getElementById('category2023Chart')),
+            category2024: echarts.init(document.getElementById('category2024Chart')),
+            category2025: echarts.init(document.getElementById('category2025Chart')),
+            categoryTrend: echarts.init(document.getElementById('categoryTrendChart')),
+            radar: echarts.init(document.getElementById('radarChart'))
+        };
+
+        // 1. 2026年月度趋势图
+        const currentYearOption = {
+            tooltip: { trigger: 'axis' },
+            xAxis: {
+                type: 'category',
+                data: ['1月', '2月', '3月', '4月', '5月(预测)', '6月(预测)'],
+                axisLine: { lineStyle: { color: '#555' } },
+                axisLabel: { color: '#ccc' }
+            },
+            yAxis: {
+                type: 'value',
+                name: '诉求量 (万件)',
+                axisLine: { lineStyle: { color: '#555' } },
+                splitLine: { lineStyle: { color: '#333' } },
+                axisLabel: { color: '#ccc' }
+            },
+            series: [{
+                name: '月度诉求量',
+                type: 'line',
+                smooth: true,
+                data: [42.5, 38.2, 41.8, 39.1, 40.5, 42.2],
+                areaStyle: { color: 'rgba(79, 195, 247, 0.3)' },
+                itemStyle: { color: '#4fc3f7' },
+                lineStyle: { width: 3 }
+            }]
+        };
+
+        // 2. 2026年诉求类型分布
+        const categoryOption = {
+    tooltip: { trigger: 'item' },
+    // 隐藏右侧图例，因为标签直接显示在图上
+    legend: {
+        show: false
+    },
+    series: [{
+        name: '诉求类型',
+        type: 'pie',
+        radius: ['40%', '70%'],
+        center: ['40%', '50%'],
+        avoidLabelOverlap: false,
+        itemStyle: { borderRadius: 10, borderColor: '#0a2050', borderWidth: 2 },
+        // 关键修改：显示标签并放大
+        label: {
+            show: true,
+            position: 'outside', // 标签位置：outside 表示在扇区外部（靠近扇区）
+            fontSize: 16,       // 字体大小
+            fontWeight: 'bold', // 加粗
+            color: '#fff',      // 字体颜色
+            formatter: '{b}\n{c}%' // 显示名称和占比（换行）
+        },
+        emphasis: {
+            label: { 
+                show: true, 
+                fontSize: '20', 
+                fontWeight: 'bold', 
+                color: '#fff' 
+            }
+        },
+        labelLine: { 
+            show: true, 
+            length: 10,    // 引线第一段长度
+            length2: 15,   // 引线第二段长度
+            smooth: true   // 引线平滑
+        },
+        data: [
+            { value: 27, name: '住房物业类' },
+            { value: 18, name: '交通出行类' },
+            { value: 15, name: '城市建设类' },
+            { value: 12, name: '民生保障类' },
+            { value: 28, name: '其他类别' }
+        ].map((item, index) => ({
+            ...item,
+            itemStyle: { 
+                color: ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de'][index] 
+            }
+        }))
+    }]
+};
+
+        // 3. 2026年处理时效
+        const timeOption = {
+            tooltip: { trigger: 'axis' },
+            xAxis: {
+                type: 'category',
+                data: ['2小时内', '2-6小时', '6-12小时', '12-24小时', '24小时以上'],
+                axisLine: { lineStyle: { color: '#555' } },
+                axisLabel: { color: '#ccc' }
+            },
+            yAxis: {
+                type: 'value',
+                name: '占比 (%)',
+                axisLine: { lineStyle: { color: '#555' } },
+                splitLine: { lineStyle: { color: '#333' } },
+                axisLabel: { color: '#ccc' }
+            },
+            series: [{
+                name: '处理时效',
+                type: 'bar',
+                data: [45, 30, 15, 7, 3],
+                itemStyle: { color: '#9c27b0' },
+                label: { show: true, position: 'top', color: '#fff' }
+            }]
+        };
+
+        // 4. 历年总量趋势
+        const historyTrendOption = {
+            tooltip: { trigger: 'axis' },
+            xAxis: {
+                type: 'category',
+                data: ['2022年', '2023年', '2024年', '2025年'],
+                axisLine: { lineStyle: { color: '#555' } },
+                axisLabel: { color: '#ccc' }
+            },
+            yAxis: {
+                type: 'value',
+                name: '诉求量 (万件)',
+                axisLine: { lineStyle: { color: '#555' } },
+                splitLine: { lineStyle: { color: '#333' } },
+                axisLabel: { color: '#ccc' }
+            },
+            series: [{
+                name: '年度总量',
+                type: 'bar',
+                data: [7592.4, 2143.8, 2419.5, 2612.6],
+                itemStyle: { color: '#2196F3' },
+                label: { show: true, position: 'top', color: '#ccc', formatter: '{c}万' }
+            }]
+        };
+
+        // 5. 历年同比增长率
+        const growthRateOption = {
+            tooltip: { trigger: 'axis' },
+            xAxis: {
+                type: 'category',
+                data: ['2023', '2024', '2025', '2026(预测)'],
+                axisLine: { lineStyle: { color: '#555' } },
+                axisLabel: { color: '#ccc' }
+            },
+            yAxis: {
+                type: 'value',
+                name: '增长率 (%)',
+                axisLine: { lineStyle: { color: '#555' } },
+                splitLine: { lineStyle: { color: '#333' } },
+                axisLabel: { color: '#ccc', formatter: '{value}%' }
+            },
+            series: [{
+                name: '同比增长率',
+                type: 'bar',
+                data: [9.1, 5.9, 11.7, -8.5],
+                itemStyle: {
+                    color: function(params) {
+                        return params.value >= 0 ? '#4CAF50' : '#f44336';
+                    }
+                },
+                label: { show: true, position: 'top', color: '#fff', formatter: '{c}%' }
+            }]
+        };
+
+        // 6. 历年满意度趋势
+        const satisfactionOption = {
+            tooltip: { trigger: 'axis' },
+            xAxis: {
+                type: 'category',
+                data: ['2022', '2023', '2024', '2025', '2026(预测)'],
+                axisLine: { lineStyle: { color: '#555' } },
+                axisLabel: { color: '#ccc' }
+            },
+            yAxis: {
+                type: 'value',
+                name: '满意度 (%)',
+                min: 90,
+                max: 100,
+                axisLine: { lineStyle: { color: '#555' } },
+                splitLine: { lineStyle: { color: '#333' } },
+                axisLabel: { color: '#ccc', formatter: '{value}%' }
+            },
+            series: [{
+                name: '满意度',
+                type: 'line',
+                smooth: true,
+                data: [92.5, 93.8, 94.2, 94.1, 96.2],
+                itemStyle: { color: '#FF9800' },
+                lineStyle: { width: 3 },
+                areaStyle: { color: 'rgba(255, 152, 0, 0.3)' }
+            }]
+        };
+
+        // 7-10. 历年类别TOP5柱状图
+        const createCategoryOption = (year, data) => ({
+            tooltip: { trigger: 'axis' },
+            xAxis: {
+                type: 'category',
+                data: data.map(item => item.name),
+                axisLine: { lineStyle: { color: '#555' } },
+                axisLabel: { 
+                    color: '#ccc',
+                    interval: 0,
+                    rotate: 30
+                }
+            },
+            yAxis: {
+                type: 'value',
+                name: '占比 (%)',
+                axisLine: { lineStyle: { color: '#555' } },
+                splitLine: { lineStyle: { color: '#333' } },
+                axisLabel: { color: '#ccc', formatter: '{value}%' }
+            },
+            grid: { left: '15%', right: '5%', top: '15%', bottom: '20%' },
+            series: [{
+                name: '占比',
+                type: 'bar',
+                barWidth: '60%',
+                data: data.map(item => ({
+                    value: item.value,
+                    itemStyle: { color: item.color }
+                })),
+                label: { show: true, position: 'top', color: '#fff', formatter: '{c}%' }
+            }]
+        });
+
+        // 历年类别TOP5数据
+        const categoryData = {
+            2022: [
+                { name: '住房物业', value: 28.5, color: '#5470c6' },
+                { name: '交通出行', value: 22.3, color: '#91cc75' },
+                { name: '市容环境', value: 15.8, color: '#fac858' },
+                { name: '公共服务', value: 12.4, color: '#ee6666' },
+                { name: '医疗卫生', value: 8.2, color: '#73c0de' }
+            ],
+            2023: [
+                { name: '住房物业', value: 26.8, color: '#5470c6' },
+                { name: '交通出行', value: 20.5, color: '#91cc75' },
+                { name: '城市建设', value: 16.2, color: '#fac858' },
+                { name: '民生保障', value: 13.1, color: '#ee6666' },
+                { name: '教育文化', value: 7.9, color: '#73c0de' }
+            ],
+            2024: [
+                { name: '住房物业', value: 25.3, color: '#5470c6' },
+                { name: '城市建设', value: 18.7, color: '#fac858' },
+                { name: '交通出行', value: 17.9, color: '#91cc75' },
+                { name: '民生保障', value: 14.5, color: '#ee6666' },
+                { name: '环境保护', value: 9.2, color: '#9c27b0' }
+            ],
+            2025: [
+                { name: '住房物业', value: 24.9, color: '#5470c6' },
+                { name: '城市建设', value: 20.1, color: '#fac858' },
+                { name: '交通出行', value: 18.3, color: '#91cc75' },
+                { name: '民生保障', value: 15.8, color: '#ee6666' },
+                { name: '数字政务', value: 10.5, color: '#e91e63' }
+            ]
+        };
+
+        // 11. 各类别历年趋势对比
+        const categoryTrendOption = {
+            tooltip: { trigger: 'axis' },
+            legend: {
+                data: ['住房物业', '交通出行', '城市建设', '民生保障', '其他'],
+                top: 20,
+                textStyle: { color: '#ccc' }
+            },
+            xAxis: {
+                type: 'category',
+                data: ['2022', '2023', '2024', '2025'],
+                axisLine: { lineStyle: { color: '#555' } },
+                axisLabel: { color: '#ccc' }
+            },
+            yAxis: {
+                type: 'value',
+                name: '占比 (%)',
+                axisLine: { lineStyle: { color: '#555' } },
+                splitLine: { lineStyle: { color: '#333' } },
+                axisLabel: { color: '#ccc', formatter: '{value}%' }
+            },
+            series: [
+                { name: '住房物业', type: 'line', data: [28.5, 26.8, 25.3, 24.9], smooth: true },
+                { name: '交通出行', type: 'line', data: [22.3, 20.5, 17.9, 18.3], smooth: true },
+                { name: '城市建设', type: 'line', data: [15.8, 16.2, 18.7, 20.1], smooth: true },
+                { name: '民生保障', type: 'line', data: [12.4, 13.1, 14.5, 15.8], smooth: true },
+                { name: '其他', type: 'line', data: [21.0, 23.4, 23.6, 20.9], smooth: true }
+            ].map((series, index) => ({
+                ...series,
+                itemStyle: { color: ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de'][index] },
+                lineStyle: { width: 3 }
+            }))
+        };
+
+        // 12. 雷达图
+        const radarOption = {
+            tooltip: { trigger: 'item' },
+            radar: {
+                indicator: [
+                    { name: '诉求总量(万件)', max: 400,textStyle: { 
+                    color: '#fff', 
+                    fontWeight: 'bold' 
+                } },
+                    { name: '增长率%', max: 20,textStyle: { 
+                    color: '#fff', 
+                    fontWeight: 'bold' 
+                }  },
+                    { name: '满意度%', max: 100,textStyle: { 
+                    color: '#fff', 
+                    fontWeight: 'bold' 
+                }  },
+                    { name: '响应时效', max: 100 ,textStyle: { 
+                    color: '#fff', 
+                    fontWeight: 'bold' 
+                } },
+                    { name: '解决率%', max: 100 ,textStyle: { 
+                    color: '#fff', 
+                    fontWeight: 'bold' 
+                } }
+                ],
+                shape: 'circle',
+                splitLine: { lineStyle: { color: 'rgba(255, 255, 255, 0.2)' } },
+                axisLine: { lineStyle: { color: 'rgba(255, 255, 255, 1)' } },
+                splitArea: { show: true, areaStyle: { color: ['rgba(255, 255, 255, 0.02)', 'rgba(255, 255, 255, 0.01)'] } }
+                
+            },
+            series: [{
+                name: '年度表现',
+                type: 'radar',
+                data: [
+                    {
+                        value: [298.5, 9.1, 92.5, 85, 88],
+                        name: '2022年',
+                        symbol: 'circle',
+                        symbolSize: 8,
+                        lineStyle: { width: 3 },
+                        areaStyle: { opacity: 0.3 }
+                    },
+                    {
+                        value: [325.8, 5.9, 93.8, 88, 90],
+                        name: '2023年',
+                        symbol: 'circle',
+                        symbolSize: 8,
+                        lineStyle: { width: 3 },
+                        areaStyle: { opacity: 0.3 }
+                    },
+                    {
+                        value: [345.2, 11.7, 94.2, 92, 93],
+                        name: '2024年',
+                        symbol: 'circle',
+                        symbolSize: 8,
+                        lineStyle: { width: 3 },
+                        areaStyle: { opacity: 0.3 }
+                    },
+                    {
+                        value: [385.6, 4.1, 94.1, 94, 95],
+                        name: '2025年',
+                        symbol: 'circle',
+                        symbolSize: 8,
+                        lineStyle: { width: 3 },
+                        areaStyle: { opacity: 0.3 }
+                    }
+                ]
+                
+                
+            }],
+            color: ['#5470c6', '#91cc75', '#fac858', '#ee6666']
+        };
+
+        // 设置所有图表选项
+        charts.currentYear.setOption(currentYearOption);
+        charts.category.setOption(categoryOption);
+        charts.time.setOption(timeOption);
+        charts.historyTrend.setOption(historyTrendOption);
+        charts.growthRate.setOption(growthRateOption);
+        charts.satisfaction.setOption(satisfactionOption);
+        charts.category2022.setOption(createCategoryOption(2022, categoryData[2022]));
+        charts.category2023.setOption(createCategoryOption(2023, categoryData[2023]));
+        charts.category2024.setOption(createCategoryOption(2024, categoryData[2024]));
+        charts.category2025.setOption(createCategoryOption(2025, categoryData[2025]));
+        charts.categoryTrend.setOption(categoryTrendOption);
+        charts.radar.setOption(radarOption);
+
+        // 响应式处理
+        window.addEventListener('resize', () => {
+            Object.values(charts).forEach(chart => chart.resize());
+        });
+
+        // 添加卡片悬停效果
+        document.querySelectorAll('.stat-card').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.boxShadow = '0 8px 20px rgba(0, 0, 0, 0.2)';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.boxShadow = 'none';
+            });
+        });
+    </script>
+</body>
+</html>

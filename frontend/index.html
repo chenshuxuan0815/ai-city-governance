@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>北京12345市民服务热线智能分析平台</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+        }
+
+        :root {
+            --primary-dark: #0a2050;
+            --primary-blue: #1a4da3;
+            --secondary-blue: #2a7de6;
+            --accent-teal: #4fc3f7;
+            --text-primary: #ffffff;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, #051230 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* 导航栏 */
+        .navbar {
+            background: rgba(10, 32, 80, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--accent-teal);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+        }
+
+        .nav-link {
+            color: var(--text-primary);
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background: var(--secondary-blue);
+            color: white;
+        }
+
+        /* 主内容区 */
+        .container {
+            max-width: 1400px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        /* 顶部标题 + 时间 */
+        .header {
+            background: rgba(10, 32, 80, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: bold;
+            color: #fff;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo span {
+            color: var(--accent-teal);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 16px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .nav-links a:hover,
+        .nav-links a.active {
+            color: #fff;
+            background: rgba(42, 125, 230, 0.2);
+        }
+
+        .nav-links a.active::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 6px;
+            background: var(--accent-teal);
+            border-radius: 50%;
+        }
+
+
+        /* 统计卡片 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #ccc;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--accent-teal);
+        }
+
+        .stat-unit {
+            font-size: 14px;
+            color: #aaa;
+            margin-top: 4px;
+        }
+
+        /* TOP5 类别 */
+        .top5-section {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--accent-teal);
+        }
+
+        .top5-list {
+            list-style: none;
+        }
+
+        .top5-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border-color);
+            align-items: center;
+        }
+
+        .top5-item:last-child {
+            border-bottom: none;
+        }
+
+        .rank {
+            font-weight: bold;
+            width: 20px;
+            text-align: center;
+        }
+
+        .rank-1 { color: #ff5722; }
+        .rank-2 { color: #ff9800; }
+        .rank-3 { color: #ffeb3b; }
+        .rank-4 { color: #4caf50; }
+        .rank-5 { color: #2196f3; }
+
+        .category-name {
+            flex: 1;
+            margin-left: 10px;
+        }
+
+        .category-value {
+            font-weight: bold;
+            color: var(--accent-teal);
+        }
+
+        .category-change {
+            font-size: 12px;
+            color: #aaa;
+            margin-left: 8px;
+        }
+
+        /* 图表区域 */
+        .chart-section {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+        .chart-container {
+            width: 100%;
+            height: 300px;
+            position: relative;
+        }
+
+        /* 底部占位 */
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #777;
+            font-size: 12px;
+        }
+
+        /* 响应式 */
+        @media (max-width: 1024px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            .nav-links {
+                gap: 10px;
+            }
+            .nav-link {
+                padding: 6px 10px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <header class="header">
+        <div class="nav-container">
+            <a href="index.html" class="logo">北京12345<span>智能分析平台</span></a>
+            <nav class="nav-links">
+                <a href="index.html"class="active">首页</a>
+                <a href="insight.html">数据总览</a>
+                <a href="dashboard.html">模拟驾驶舱</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <div class="container">
+        <div class="header">
+            <div class="time-display" id="current-time">数据更新时间：--</div>
+        </div>
+
+        <!-- 统计卡片（4个） -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">📈 今日诉求总量</div>
+                <div class="stat-value" id="today-total">--</div>
+                <div class="stat-unit">件</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">📊 本月诉求总量</div>
+                <div class="stat-value" id="month-total">--</div>
+                <div class="stat-unit">件</div>
+            </div>
+            <!-- 以下两个卡片隐藏（保留布局） -->
+            <div class="stat-card hidden">
+                <div class="stat-label">✅ 诉求办结率</div>
+                <div class="stat-value">95.4</div>
+                <div class="stat-unit">%</div>
+            </div>
+            <div class="stat-card hidden">
+                <div class="stat-label">⭐ 群众满意度</div>
+                <div class="stat-value">96.6</div>
+                <div class="stat-unit">%</div>
+            </div>
+        </div>
+
+        <!-- TOP5 类别 -->
+        <div class="top5-section">
+            <div class="section-title">📌 本月诉求TOP5类别</div>
+            <ul class="top5-list" id="top5-list">
+                <!-- 数据由 JS 渲染 -->
+            </ul>
+        </div>
+
+        <!-- 今日诉求量趋势图 -->
+        <div class="chart-section">
+            <div class="section-title">📊 今日诉求量趋势（按小时）</div>
+            <div class="chart-container" id="hourly-chart"></div>
+        </div>
+
+        <!-- 底部 -->
+        <div class="footer">
+            数据更新时间：<span id="footer-time">--</span> | 状态：数据已更新
+        </div>
+    </div>
+
+    <!-- 核心 JS 逻辑 -->
+    <!-- 核心 JS 逻辑 -->
+    <script>
+        // 页面加载后执行
+        document.addEventListener('DOMContentLoaded', function () {
+            // 1. 初始化 ECharts 实例
+            const chart = echarts.init(document.getElementById('hourly-chart'));
+
+            // 2. 时间格式化函数（适配后端格式）
+            function formatDateTime(date) {
+                const y = date.getFullYear();
+                const m = String(date.getMonth() + 1).padStart(2, '0');
+                const d = String(date.getDate()).padStart(2, '0');
+                const h = String(date.getHours()).padStart(2, '0');
+                const min = String(date.getMinutes()).padStart(2, '0');
+                const s = String(date.getSeconds()).padStart(2, '0');
+                return `${y}-${m}-${d} ${h}:${min}:${s}`;
+            }
+
+            // 3. 更新页面时间（每秒）
+            function updateTime() {
+                const now = new Date();
+                const timeStr = formatDateTime(now);
+                document.getElementById('current-time').innerText = `数据更新时间：${timeStr}`;
+                document.getElementById('footer-time').innerText = timeStr;
+            }
+            setInterval(updateTime, 1000);
+            updateTime(); // 立即执行一次
+
+            // 4. 拉取数据并更新页面（每 3 秒）
+            function refreshData() {
+                // 4.1 今日总量
+                fetch('http://localhost:8080/api/today-total')
+                    .then(res => res.json())
+                    .then(count => {
+                        document.getElementById('today-total').innerText = count;
+                    })
+                    .catch(err => console.error('今日总量请求失败:', err));
+
+                // 4.2 本月总量
+                fetch('http://localhost:8080/api/month-total')
+                    .then(res => res.json())
+                    .then(count => {
+                        document.getElementById('month-total').innerText = count;
+                    })
+                    .catch(err => console.error('本月总量请求失败:', err));
+
+                // 4.3 TOP5 类别
+                fetch('http://localhost:8080/api/top5-categories')
+                    .then(res => res.json())
+                    .then(data => {
+                        const top5List = document.getElementById('top5-list');
+                        top5List.innerHTML = ''; // 清空旧数据
+
+                        data.forEach((item, index) => {
+                            const li = document.createElement('li');
+                            li.className = 'top5-item';
+                            li.innerHTML = `
+                                <span class="rank rank-${index + 1}">${index + 1}.</span>
+                                <span class="category-name">${item.category_name}</span>
+                                <span class="category-value">${item.total}件</span>
+                                <span class="category-change">${item.percentage || '0'}%</span>
+                            `;
+                            top5List.appendChild(li);
+                        });
+                    })
+                    .catch(err => console.error('TOP5 请求失败:', err));
+            }
+
+            // 4.4 趋势图（24小时完整刻度 + 当前时刻红线 + Tooltip）
+            function loadDailyTrend() {
+                const chartDom = document.getElementById('hourly-chart');
+                if (!chartDom) return;
+
+                // 显示加载中
+                
+
+                // 请求数据
+                fetch('http://localhost:8080/api/daily-trend')
+    .then(res => res.json())
+    .then(data => {
+        const now = new Date();
+        const currentHour = now.getHours();
+
+        // 生成 0-23 小时坐标
+        const hours = Array.from({ length: 24 }, (_, i) => i);
+        // 柱状图数据（当前小时前的真实数据，之后的为null）
+        const barData = hours.map(h => {
+            const item = data.find(d => d.hour === h);
+            return h < currentHour ? (item ? item.total : 0) : null;
+        });
+        // 折线图数据（与柱状图一致，用于连线）
+        const lineData = [...barData]; // 直接复用柱状图数据（或取最大值等）
+
+        const chart = echarts.init(chartDom);
+        chart.setOption({
+            xAxis: {
+                type: 'category',
+                data: hours.map(h => `${h}点`),
+                axisLabel: { color: '#ddd', interval: 0 }
+            },
+            yAxis: {
+                type: 'value',
+                name: '诉求量（件）',
+                nameTextStyle: { color: '#ddd' }
+            },
+            series: [
+                // 柱状图系列
+                {
+                    name: '诉求量',
+                    type: 'bar',
+                    data: barData,
+                    itemStyle: {
+                        color: params => params.dataIndex <= currentHour ? '#03a9f4' : '#666',
+                        borderRadius: [6, 6, 0, 0]
+                    },
+                    barWidth: '60%' // 调整柱宽（可选）
+                },
+                // 红色趋势线系列
+                {
+                    name: '趋势线',
+                    type: 'line',
+                    data: lineData,
+                    symbol: 'circle', // 标记点样式（可选）
+                    symbolSize: 6,    // 标记点大小（可选）
+                    itemStyle: {
+                        color: '#ff4d4f' // 标记点颜色（红）
+                    },
+                    lineStyle: {
+                        color: '#ff4d4f', // 线条颜色（红）
+                        width: 2          // 线条宽度（加粗更醒目）
+                    },
+                    smooth: false, // 是否平滑（false为直线连接）
+                    connectNulls: true // 连接null值（确保折线连续）
+                }
+            ],
+            tooltip: {
+                trigger: 'axis',
+                formatter: params => {
+                    let result = `${params[0].name}<br/>`;
+                    params.forEach(item => {
+                        if (item.seriesType === 'bar') {
+                            result += `诉求量: <b style="color:#03a9f4">${item.value}件</b><br/>`;
+                        } else {
+                            result += `趋势线: <b style="color:#ff4d4f">${item.value}件</b><br/>`;
+                        }
+                    });
+                    return result;
+                }
+            }
+        });
+
+        // 窗口缩放自适应
+        window.addEventListener('resize', () => chart.resize());
+    })
+    .catch(err => console.error('趋势图加载失败:', err));
+}
+
+            // 初始加载 + 定时刷新（每 3 秒）
+            refreshData();
+            loadDailyTrend(); // 先加载一次趋势图
+            setInterval(refreshData, 3000); // 每 3 秒刷新数据
+        });
+    </script>
+</body>
+</html>
